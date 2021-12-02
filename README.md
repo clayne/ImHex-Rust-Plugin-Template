@@ -1,0 +1,1 @@
+ImHex-Plugin-Template
