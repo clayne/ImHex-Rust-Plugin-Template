@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_CXX_STANDARD 20)
 
+# Change this to the name of your plugin #
+project(example_rust)
+
+# ---- No need to change anything from here downwards unless you know what you're doing ---- #
 # Include ImHex cmake module #
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/ImHex/cmake/modules")
 include("${CMAKE_SOURCE_DIR}/ImHex/cmake/build_helpers.cmake")
@@ -9,29 +12,42 @@ include("${CMAKE_SOURCE_DIR}/ImHex/cmake/build_helpers.cmake")
 detectOS()
 detectArch()
 
-# Change this to the name of your plugin #
-project(example_cpp)
-
-# Add your source files here #
-add_library(${PROJECT_NAME} SHARED
-        source/plugin_example.cpp
-)
-
-# Add additional include directories here #
-target_include_directories(${PROJECT_NAME} PRIVATE include)
-# Add additional libraries here #
+# Add libimhex #
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ImHex/plugins/libimhex)
-target_link_libraries(${PROJECT_NAME} PRIVATE libimhex)
 
-
-# ---- No need to change anything from here downwards unless you know what you're doing ---- #
-
-set(CMAKE_SHARED_LIBRARY_PREFIX "")
-set(CMAKE_SHARED_LIBRARY_SUFFIX ".hexplug")
+# Detect build type and pass it on to cargo #
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CARGO_CMD ${RUST_PATH}cargo build)
+    set(TARGET_DIR "debug")
+else ()
+    set(CARGO_CMD ${RUST_PATH}cargo build --release)
+    set(TARGET_DIR "release")
+endif ()
 
 if (WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--allow-multiple-definition -fvisibility=hidden")
-endif()
+    set(PLUGIN_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_DIR}/${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+else ()
+    set(PLUGIN_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+endif ()
+
+get_target_property(LIBIMHEX_SOURCE_DIRECTORY libimhex SOURCE_DIR)
+
+# Call into cargo to compile rust plugin #
+add_custom_target(${PROJECT_NAME} ALL
+        COMMAND ${CMAKE_COMMAND} -E env
+            CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            LIBIMHEX_SOURCE_DIRECTORY=${LIBIMHEX_SOURCE_DIRECTORY}
+            LIBIMHEX_OUTPUT_DIRECTORY=$<TARGET_FILE_DIR:libimhex>
+            CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            ${CARGO_CMD}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PLUGIN_OUTPUT_PATH} "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.hexplug"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        VERBATIM
+        USES_TERMINAL
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES LOCATION ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(${PROJECT_NAME} PROPERTIES RUST_PROJECT 1)
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Rust)
 
 add_compile_definitions(IMHEX_PLUGIN_NAME=${PROJECT_NAME})
 

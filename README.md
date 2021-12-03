@@ -1,6 +1,6 @@
-# ImHex C++ Plugin Template
+# ImHex Rust Plugin Template
 
-This repository is a template repository for building plugins for ImHex in C++.
+This repository is a template repository for building plugins for ImHex in Rust.
 
 ## Building
 
