@@ -7,6 +7,7 @@ project(example_rust)
 # Include ImHex cmake module #
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/ImHex/cmake/modules")
 include("${CMAKE_SOURCE_DIR}/ImHex/cmake/build_helpers.cmake")
+set(IMHEX_BASE_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/ImHex)
 
 # Create OS and Architecture defines #
 detectOS()
