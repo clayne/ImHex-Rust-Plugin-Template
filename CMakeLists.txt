@@ -12,7 +12,7 @@ include("${IMHEX_BASE_FOLDER}/cmake/build_helpers.cmake")
 
 # Include ImHex
 add_subdirectory(${IMHEX_BASE_FOLDER})
-addVersionDefines()
+addDefines()
 
 # Create OS and Architecture defines #
 detectOS()
